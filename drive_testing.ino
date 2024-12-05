@@ -8,7 +8,7 @@
 #include <WiFi.h>       //Include ESP32 WiFi library to our sketch
 #include "base64.hpp"
 #include "wifistuff.h"
-#include "time_info.h"
+#include "DSTManager.h"
 
 //#define ssid "vincentswifi" // Name of the WiFi network (SSID) that you want to connect Inkplate to
 //#define pass "passwordplaintext" // Password of that WiFi network
@@ -27,6 +27,8 @@ struct Result {
   String text;
 };
 
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); // NTP client
 
 
 void setup()
@@ -56,6 +58,7 @@ void setup()
     display.display();
     //testsite();
     //statusbar();
+    timeClient.begin();
 }
 
 void loop()
@@ -64,7 +67,6 @@ void loop()
     return;
   }
   readMillis = millis();
-
   // If wifi is down, do nothing else and print status off
   if (WiFi.status() != WL_CONNECTED)
   {
@@ -96,34 +98,6 @@ void loop()
   display.clearDisplay();
 }
 
-void testsite()
-{
-  display.print("testing connection with example.com\n");
-  display.partialUpdate();
-  HTTPClient http;
-  http.begin("http://example.com/index.html");
-  int responsecode = http.GET();
-  int bodyLen = http.getSize();
-  String encodedString = http.getString();
-  pdt(responsecode, "responsecode");
-  pdt(bodyLen, "bodylength");
-  pdt(encodedString, "encodedstring");
-  delay(5);
-  display.clearDisplay();
-  display.setCursor(0, 0);
-}
-
-template <typename T>
-void pdt(const T& var, const char* varname)
-{
-  String text = String(var);
-  display.print(varname);
-  display.print(" is: ");
-  display.print(text);
-  display.print("\n");
-  display.partialUpdate();
-}
-
 Result parseInput(String input) {
   int newlineIndex = input.indexOf('\n');
   String firstLine = input.substring(0, newlineIndex);
@@ -143,34 +117,12 @@ Result parseInput(String input) {
     return {size, pos_x, pos_y, remainingText};
 }
 
-void decodestring(String encodedString) {
-  String displaytext = encodedString;
-  const char* website = encodedString.c_str();
-  display.print(website);
-  display.print("\n");
-  display.partialUpdate();
-  unsigned char* uwebsite = new unsigned char[sizeof(website)];
-  memcpy(uwebsite, website, sizeof(website));
-
-  unsigned int decodedLength = decode_base64_length(uwebsite);
-  unsigned char decodedString[decodedLength + 1];  // +1 for null-termination
-  decode_base64(uwebsite, decodedString);
-
-
-  decodedString[decodedLength] = '\0';  // Null-terminate the decoded string
-  const char* printtext = reinterpret_cast<const char*>(decodedString);
-
-  //display.setTextSize(1); // Set smaller text size, so everything can fit on screen
-  //display.clearDisplay();
-  //display.setCursor(0, 0);
-  //display.print(printtext);
-  //display.display();
-  //}
-}
-
 void statusbar(String WifiStatus, String SiteStatus) {
-  String Status = "";
-  for (int i=0; i < 50; i++){
+  timeClient.update();
+  updateDST(timeClient);  // Call the DST adjustment function
+  String formattedTime = timeClient.getFormattedTime();
+  String Status = formattedTime + "";
+  for (int i=0; i < 30; i++){
     Status += " ";
   }
   Status += "WiFi: " + WifiStatus + " Site: " + SiteStatus;
