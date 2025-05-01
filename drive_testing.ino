@@ -176,35 +176,22 @@ void setup_wifi() {
   cursorline = 0;
 }
 
-void print(const String& message) {
-  int length = message.length();
-  int chunklength = 29;
-  for (int i = 0; i<length; i += chunklength) {
-    if (cursorline == 28) {
-      //display.clearDisplay();
-      display.setCursor(0, 0);
-      cursorline = 0;
-    }
-    String chunk = message.substring(i, i + chunklength);
-    display.print("                                  ");
-    display.print(chunk);
-    display.print("\n");
-    cursorline++;
-  }
-  display.partialUpdate();
-}
 
 void scan_wifi() {
   print("Scanning WiFis...");
+  Serial.println("Scanning WiFis...");
   int n = WiFi.scanNetworks();
   print("Scan complete.");
+  Serial.println("Scan complete.");
   if (n == 0) {
     print("No networks found.");
+    Serial.println("No networks found.");
   } else {
     String message = "found " + String(n) + " networks";
     print(message);
     for (int i = 0; i < n; ++i) {
       message = String(i + 1) + ": " + WiFi.SSID(i) + " (RSSI: " + String(WiFi.RSSI(i)) + " dBm)";
+      Serial.println(String(i + 1) + ": " + WiFi.SSID(i) + " (RSSI: " + String(WiFi.RSSI(i)) + " dBm)");
       print(message);
     }
   }
