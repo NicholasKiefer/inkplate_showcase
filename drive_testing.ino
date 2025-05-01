@@ -126,7 +126,7 @@ void display_git(Result result) {
     String message = "download link: " + downloadlink;
     Serial.println(message);
     display.clearDisplay();
-    if (!display.drawImage(downloadlink, 0, 0, false, false)) {
+    if (!display.drawImage(downloadlink, 0, 0, true)) {
       Serial.println("image error. Wrong url or wrong image encoding.");
       return;
     }
