@@ -147,7 +147,7 @@ void setup_display() {
 }
 
 void setup_wifi() {
-  //scan_wifi();  // first a scan
+  scan_wifi();  // first a scan
 
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
@@ -210,4 +210,21 @@ bool detect_button() {
     return true;
   }
   return false;
+}
+
+void print(const String& message) {
+  int length = message.length();
+  int chunklength = 60;
+  for (int i = 0; i<length; i += chunklength) {
+    if (cursorline == 28) {
+      //display.clearDisplay();
+      display.setCursor(0, 0);
+      cursorline = 0;
+    }
+    String chunk = message.substring(i, i + chunklength);
+    display.print(chunk);
+    display.print("\n");
+    cursorline++;
+  }
+  display.partialUpdate();
 }
