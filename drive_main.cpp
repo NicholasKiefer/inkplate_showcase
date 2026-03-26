@@ -1,5 +1,10 @@
 #include "drive_main.h"
 
+
+void setup_logic() {
+  
+}
+
 void logic() {
   // Core drive logic here
   // This function will be iteratively updated

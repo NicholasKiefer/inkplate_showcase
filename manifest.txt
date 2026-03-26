@@ -1,2 +1,2 @@
-1.0.2
+1.0.3
 https://github.com/NicholasKiefer/inkplate_showcase/raw/refs/heads/OTA-updates/build/Inkplate_Boards.esp32.Inkplate6V2/inkplate_showcase.ino.bin

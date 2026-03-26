@@ -3,6 +3,7 @@
 
 #include "Inkplate.h"
 
+void setup_logic();
 void logic();
 
 #endif
