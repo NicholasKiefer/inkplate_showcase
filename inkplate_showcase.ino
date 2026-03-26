@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.0.2"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -37,13 +37,13 @@ void setup() {
   delay(1000);
   analogReadResolution(12);
   //pinMode(GPIO_NUM_36, INPUT_PULLUP); // Set wake-up button as input
+  startTime = millis();
 
 }
 
 void loop() {
-  startTime = millis();
   logic();  // Call the main drive logic from the separate .cpp file
-
+  
   // After running for x, check for OTA update
   if (millis() - startTime > 6000) {
     if (WiFi.status() == WL_CONNECTED) {
@@ -51,6 +51,7 @@ void loop() {
     } else {
       Serial.println("WiFi disconnected, cannot check for update.");
     }
+    startTime = millis();
   }
 }
 
