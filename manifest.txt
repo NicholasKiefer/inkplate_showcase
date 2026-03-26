@@ -1,2 +1,2 @@
 1.0.0
-https://github.com/NicholasKiefer/inkplate_showcase/blob/OTA-updates/manifest.txt
+https://github.com/NicholasKiefer/inkplate_showcase/raw/refs/heads/OTA-updates/build/Inkplate_Boards.esp32.Inkplate6V2/drive_testing.ino.bin

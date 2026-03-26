@@ -25,7 +25,7 @@ Inkplate display(INKPLATE_3BIT);
 bool staticip = false;
 unsigned long startTime;
 
-bool otaChecked = false;
+int cursorline = 0;
 
 
 void setup() {
@@ -42,16 +42,15 @@ void setup() {
 }
 
 void loop() {
-  main();  // Call the main drive logic from the separate .cpp file
+  logic();  // Call the main drive logic from the separate .cpp file
 
-  // After running for a minute, check for OTA update
-  if (!otaChecked && millis() - startTime > 60000) {
+  // After running for x, check for OTA update
+  if millis() - startTime > 6000 {
     if (WiFi.status() == WL_CONNECTED) {
       check_for_update();
     } else {
       Serial.println("WiFi disconnected, cannot check for update.");
     }
-    otaChecked = true;
   }
 }
 
