@@ -38,10 +38,10 @@ void setup() {
   analogReadResolution(12);
   //pinMode(GPIO_NUM_36, INPUT_PULLUP); // Set wake-up button as input
 
-  startTime = millis();
 }
 
 void loop() {
+  startTime = millis();
   logic();  // Call the main drive logic from the separate .cpp file
 
   // After running for x, check for OTA update
