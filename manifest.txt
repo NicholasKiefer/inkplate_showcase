@@ -1,1 +1,2 @@
 1.0.0
+https://github.com/NicholasKiefer/inkplate_showcase/blob/OTA-updates/manifest.txt

@@ -10,6 +10,8 @@
 #include <HTTPUpdate.h>  // ESP32 HTTP Update helper (for OTA updates)
 #include <WiFiClientSecure.h>
 
+#include "drive_main.h"  // Include the main drive logic
+
 // Current firmware version. Bump this when releasing a new firmware
 #define FIRMWARE_VERSION "1.0.0"
 
@@ -21,9 +23,9 @@ String displaytext;
 //Inkplate display(INKPLATE_1BIT);  // Create an object on Inkplate library and also set library into 1 Bit mode (BW)
 Inkplate display(INKPLATE_3BIT);
 bool staticip = false;
+unsigned long startTime;
 
-int cursorline = 0;
-int updateMs = 30000;
+bool otaChecked = false;
 
 
 void setup() {
@@ -35,25 +37,22 @@ void setup() {
   delay(1000);
   analogReadResolution(12);
   //pinMode(GPIO_NUM_36, INPUT_PULLUP); // Set wake-up button as input
+
+  startTime = millis();
 }
 
 void loop() {
-  // check time
-  if (!(millis() - readMillis > updateMs || readMillis == 0)) {
-    return;
-  }
+  main();  // Call the main drive logic from the separate .cpp file
 
-  // check internet connection
-  readMillis = millis();
-  if (WiFi.status() != WL_CONNECTED) {
-    // keep counter, wait 1 min and try again
-    Serial.println("WiFi disconnected.");
-    return;
+  // After running for a minute, check for OTA update
+  if (!otaChecked && millis() - startTime > 60000) {
+    if (WiFi.status() == WL_CONNECTED) {
+      check_for_update();
+    } else {
+      Serial.println("WiFi disconnected, cannot check for update.");
+    }
+    otaChecked = true;
   }
-  // check for OTA update and perform if available
-  check_for_update();
-
-  return;
 }
 
 
