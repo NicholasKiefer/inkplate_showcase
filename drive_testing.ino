@@ -43,10 +43,9 @@ void setup() {
 
 void loop() {
   logic();  // Call the main drive logic from the separate .cpp file
-  logic();  // Call the main drive logic from the separate .cpp file
 
   // After running for x, check for OTA update
-  if millis() - startTime > 6000 {
+  if (millis() - startTime > 6000) {
     if (WiFi.status() == WL_CONNECTED) {
       check_for_update();
     } else {
@@ -54,8 +53,6 @@ void loop() {
     }
   }
 }
-
-
 
 void setup_display() {
   display.begin();                     // Init Inkplate library (you should call this function ONLY ONCE)
