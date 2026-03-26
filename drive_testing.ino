@@ -43,6 +43,7 @@ void setup() {
 
 void loop() {
   logic();  // Call the main drive logic from the separate .cpp file
+  logic();  // Call the main drive logic from the separate .cpp file
 
   // After running for x, check for OTA update
   if millis() - startTime > 6000 {
