@@ -3,4 +3,4 @@
 
 String ssid = "fermiwlan";
 String pass = "z57wohnung";
-String download = "https://github.com/NicholasKiefer/inkplate_showcase/blob/OTA-updates/manifest.txt";
+String download = "https://raw.githubusercontent.com/NicholasKiefer/inkplate_showcase/refs/heads/OTA-updates/manifest.txt";
