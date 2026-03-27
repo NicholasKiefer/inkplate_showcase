@@ -17,9 +17,6 @@
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
-unsigned long readMillis = 0;
-String displaytext;
-
 //Inkplate display(INKPLATE_1BIT);  // Create an object on Inkplate library and also set library into 1 Bit mode (BW)
 Inkplate display(INKPLATE_3BIT);
 bool staticip = false;
