@@ -3,6 +3,8 @@
 
 #include "Inkplate.h"
 
+extern Inkplate display;
+
 void setup_logic();
 void logic();
 

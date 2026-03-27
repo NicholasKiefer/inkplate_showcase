@@ -2,7 +2,6 @@
 #include <HTTPClient.h>
 
 // Global variables
-int cursorline = 0;
 int updateMs = 30000;
 String displaytext = "";
 unsigned long readMillis = 0;
@@ -13,14 +12,6 @@ struct Result {
 };
 
 void setup_logic() {
-  delay(1000);
-  Serial.begin(115200);
-
-  setup_display();
-  setup_wifi();
-  delay(1000);
-  analogReadResolution(12);
-  //pinMode(GPIO_NUM_36, INPUT_PULLUP); // Set wake-up button as input
 }
 
 void logic() {
@@ -41,7 +32,7 @@ void logic() {
   HTTPClient http;
   http.getStream().setNoDelay(true);
   http.getStream().setTimeout(1);
-  http.begin(download);
+  http.begin(content);
   int responsecode = http.GET();
   int bodyLen = http.getSize();
   String encodedString = http.getString();

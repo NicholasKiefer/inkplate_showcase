@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.4"
+#define FIRMWARE_VERSION "1.0.5"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -118,7 +118,7 @@ void scan_wifi() {
 }
 
 
-// Check for OTA update. Expects that `download` (from wifistuff.h) points to a small
+// Check for OTA update. Expects that `manifest` (from wifistuff.h) points to a small
 // manifest where the first line is the version string and the second line is the
 // direct URL to the .bin file. If the manifest only contains a single line, it
 // will be interpreted as the bin URL and the update will be attempted.
@@ -135,7 +135,7 @@ void check_for_update() {
 #endif
 
   HTTPClient http;
-  if (!http.begin(client, download)) {
+  if (!http.begin(client, manifest)) {
     Serial.println("HTTP begin failed for update check");
     http.end();
     return;
