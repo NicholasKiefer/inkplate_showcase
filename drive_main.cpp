@@ -1,22 +1,18 @@
 #include "drive_main.h"
 #include <HTTPClient.h>
+#include "wifistuff.h"  //Include private information like WiFi SSID and password
 
 // Global variables
 int updateMs = 30000;
 String displaytext = "";
 unsigned long readMillis = 0;
 
-struct Result {
-  String firstLine;
-  String remainingText;
-};
-
 void setup_logic() {
 }
 
 void logic() {
   // check time
-  if (!(millis() - readMillis > updateMs || readMillis == 0 || detect_button())) {
+  if (!(millis() - readMillis > updateMs || readMillis == 0)) {
     return;
   }
 
