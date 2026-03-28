@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.5"
+#define FIRMWARE_VERSION "1.0.6"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -42,7 +42,7 @@ void loop() {
   logic();  // Call the main drive logic from the separate .cpp file
   
   // After running for x, check for OTA update
-  if (millis() - startTime > 6000) {
+  if (millis() - startTime > 60000) {
     if (WiFi.status() == WL_CONNECTED) {
       check_for_update();
     } else {

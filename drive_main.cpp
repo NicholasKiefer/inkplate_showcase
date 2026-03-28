@@ -3,7 +3,7 @@
 #include "wifistuff.h"  //Include private information like WiFi SSID and password
 
 // Global variables
-int updateMs = 30000;
+int updateMs = 10000;
 String displaytext = "";
 unsigned long readMillis = 0;
 
