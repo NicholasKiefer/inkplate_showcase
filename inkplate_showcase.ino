@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.6"
+#define FIRMWARE_VERSION "1.0.7"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -23,6 +23,8 @@ bool staticip = false;
 unsigned long startTime;
 
 int cursorline = 0;
+
+int wifiFailCount = 0;
 
 
 void setup() {
@@ -39,7 +41,24 @@ void setup() {
 }
 
 void loop() {
-  logic();  // Call the main drive logic from the separate .cpp file
+  
+  // Check WiFi status and handle failures
+  if (WiFi.status() != WL_CONNECTED) {
+    wifiFailCount++;
+    Serial.println("WiFi disconnected, fail count: " + String(wifiFailCount));
+    if (wifiFailCount >= 30) {
+      Serial.println("WiFi failed 30 times, resetting connection...");
+      WiFi.disconnect();
+      delay(1000);
+      WiFi.begin(ssid, pass);
+      wifiFailCount = 0;
+    }
+  } else {
+    if (wifiFailCount > 0) {
+      Serial.println("WiFi reconnected, resetting fail count.");
+      wifiFailCount = 0;
+    }
+  }
   
   // After running for x, check for OTA update
   if (millis() - startTime > 60000) {
@@ -50,6 +69,7 @@ void loop() {
     }
     startTime = millis();
   }
+  logic();  // Call the main drive logic from the separate .cpp file
 }
 
 void setup_display() {

@@ -19,7 +19,6 @@ void logic() {
   // check internet connection
   readMillis = millis();
   if (WiFi.status() != WL_CONNECTED) {
-    // keep counter, wait 1 min and try again
     Serial.println("WiFi disconnected.");
     return;
   }
