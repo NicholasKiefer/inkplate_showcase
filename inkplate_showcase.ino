@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.12"
+#define FIRMWARE_VERSION "1.0.13"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -21,6 +21,7 @@
 Inkplate display(INKPLATE_3BIT);
 bool staticip = false;
 unsigned long startTime;
+unsigned long restartTimer;
 
 int cursorline = 0;
 
@@ -36,6 +37,7 @@ void setup() {
   delay(1000);
   analogReadResolution(12);
   startTime = millis();
+  restartTimer = millis();
   setup_logic();
 }
 
@@ -58,6 +60,12 @@ void loop() {
       Serial.println("WiFi reconnected, resetting fail count.");
       wifiFailCount = 0;
     }
+  }
+  
+  // Restart after 1 hour for safety reasons
+  if (millis() - restartTimer > 3600000UL) {
+    Serial.println("Restarting after 1 hour for safety.");
+    ESP.restart();
   }
   
   // After running for x, check for OTA update
