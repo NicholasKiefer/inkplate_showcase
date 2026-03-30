@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.11"
+#define FIRMWARE_VERSION "1.0.12"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -35,7 +35,6 @@ void setup() {
   setup_wifi();
   delay(1000);
   analogReadResolution(12);
-  //pinMode(GPIO_NUM_36, INPUT_PULLUP); // Set wake-up button as input
   startTime = millis();
   setup_logic();
 }
@@ -46,6 +45,7 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     wifiFailCount++;
     Serial.println("WiFi disconnected, fail count: " + String(wifiFailCount));
+    delay(1000);
     if (wifiFailCount >= 10) {
       Serial.println("WiFi failed 10 times, resetting connection...");
       WiFi.disconnect();
