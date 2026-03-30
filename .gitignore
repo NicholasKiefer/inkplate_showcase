@@ -3,3 +3,4 @@ wifistuff.cpp
 *.map
 *.partitions.bin
 *bootloader.bin
+todo.md
