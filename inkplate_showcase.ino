@@ -47,10 +47,10 @@ void loop() {
     wifiFailCount++;
     Serial.println("WiFi disconnected, fail count: " + String(wifiFailCount));
     if (wifiFailCount >= 10) {
-      Serial.println("WiFi failed 30 times, resetting connection...");
+      Serial.println("WiFi failed 10 times, resetting connection...");
       WiFi.disconnect();
       delay(1000);
-      WiFi.begin(ssid, pass);
+      setup_wifi();
       wifiFailCount = 0;
     }
   } else {
@@ -84,8 +84,6 @@ void setup_display() {
 }
 
 void setup_wifi() {
-  scan_wifi();  // first a scan
-
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   if (staticip) {
@@ -95,43 +93,44 @@ void setup_wifi() {
     WiFi.config(local_IP, gateway, subnet);
   }
   
-  String message = "Connecting to " + String(ssid) + "...";
-  print(message);
-  WiFi.begin(ssid, pass);  // Try to connect to WiFi network
-  Serial.println("SSID: [" + String(ssid) + "]");
-  Serial.println("PASS: [" + String(pass) + "]");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    String message = "status: " + String(WiFi.status());
-    Serial.println(message);
+  int n = WiFi.scanNetworks();
+  bool connected = false;
+  String connectedSSID = "";
+  
+  for (int i = 0; i < numNetworks && !connected; i++) {
+    // Check if this SSID is available
+    for (int j = 0; j < n; j++) {
+      if (WiFi.SSID(j) == ssids[i]) {
+        String message = "Connecting to " + String(ssids[i]) + "...";
+        print(message);
+        Serial.println("Connecting to SSID: [" + String(ssids[i]) + "]");
+        WiFi.begin(ssids[i], passwords[i]);
+        int attempts = 0;
+        while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+          delay(1000);
+          attempts++;
+          Serial.println("Attempt " + String(attempts) + ", status: " + String(WiFi.status()));
+        }
+        if (WiFi.status() == WL_CONNECTED) {
+          connected = true;
+          break;
+        }
+      }
+    }
   }
-  print("Connected.");
-  Serial.println("Connected.");
+  
+  if (connected) {
+    print("Connected to " + connectedSSID);
+    Serial.println("Connected to " + connectedSSID);
+  } else {
+    print("Failed to connect to any known network.");
+    Serial.println("Failed to connect to any known network.");
+  }
+  
   display.clearDisplay();
   display.display();
   display.setCursor(0, 0);
   cursorline = 0;
-}
-
-
-void scan_wifi() {
-  print("Scanning WiFis...");
-  Serial.println("Scanning WiFis...");
-  int n = WiFi.scanNetworks();
-  print("Scan complete.");
-  Serial.println("Scan complete.");
-  if (n == 0) {
-    print("No networks found.");
-    Serial.println("No networks found.");
-  } else {
-    String message = "found " + String(n) + " networks";
-    print(message);
-    for (int i = 0; i < n; ++i) {
-      message = String(i + 1) + ": " + WiFi.SSID(i) + " (RSSI: " + String(WiFi.RSSI(i)) + " dBm)";
-      Serial.println(String(i + 1) + ": " + WiFi.SSID(i) + " (RSSI: " + String(WiFi.RSSI(i)) + " dBm)");
-      print(message);
-    }
-  }
 }
 
 
