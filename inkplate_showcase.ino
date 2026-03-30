@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.10"
+#define FIRMWARE_VERSION "1.0.11"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -113,6 +113,7 @@ void setup_wifi() {
         }
         if (WiFi.status() == WL_CONNECTED) {
           connected = true;
+          connectedSSID = ssids[i];
           break;
         }
       }
@@ -120,10 +121,8 @@ void setup_wifi() {
   }
   
   if (connected) {
-    print("Connected to " + connectedSSID);
     Serial.println("Connected to " + connectedSSID);
   } else {
-    print("Failed to connect to any known network.");
     Serial.println("Failed to connect to any known network.");
   }
   
