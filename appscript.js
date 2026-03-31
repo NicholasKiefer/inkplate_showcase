@@ -228,21 +228,53 @@ function handleAdmin() {
 }
 
 function handleUpdate(e) {
-  const props = PropertiesService.getScriptProperties();
-  const p = e.parameter;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const p = e.parameter;
 
-  props.setProperty("mode", p.mode || "text");
-  props.setProperty("content", p.content || "");
-  props.setProperty("size", p.size || "3");
-  props.setProperty("pos_x", p.pos_x || "25");
-  props.setProperty("pos_y", p.pos_y || "60");
-  props.setProperty("image_url", p.image_url || "");
+    props.setProperty("mode", p.mode || "text");
+    props.setProperty("content", p.content || "");
+    props.setProperty("size", p.size || "3");
+    props.setProperty("pos_x", p.pos_x || "25");
+    props.setProperty("pos_y", p.pos_y || "60");
+    props.setProperty("image_url", p.image_url || "");
 
-  const version = bumpVersion(props);
+    const version = bumpVersion(props);
 
-  return HtmlService.createHtmlOutput(
-    `<h2>Updated.</h2><p>New version: ${version}</p><a href='?action=admin'>Back</a>`
-  );
+    return HtmlService.createHtmlOutput(`
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Update Successful</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+          </style>
+        </head>
+        <body>
+          <h2>Updated.</h2>
+          <p>New version: ${version}</p>
+          <a href="?action=admin">Back to Admin</a>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    return HtmlService.createHtmlOutput(`
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Update Error</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+          </style>
+        </head>
+        <body>
+          <h2>Error updating:</h2>
+          <p>${error.message}</p>
+          <a href="?action=admin">Back to Admin</a>
+        </body>
+      </html>
+    `);
+  }
 }
 
 function handleUploadPage() {
