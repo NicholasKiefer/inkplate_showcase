@@ -40,6 +40,7 @@ void setup_logic() {
 void logic() {
   if (WiFi.status() != WL_CONNECTED) {
     // WiFi handled in main ino
+    return;
   }
 
   if (millis() - lastPollMs >= updateIntervalMs || lastPollMs == 0) {

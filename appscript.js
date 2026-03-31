@@ -18,9 +18,7 @@ function doGet(e) {
       return handleUploadPage();
 
     default:
-      return ContentService
-        .createTextOutput("Missing or invalid action")
-        .setMimeType(ContentService.MimeType.TEXT);
+      return handleStatus();
   }
 }
 

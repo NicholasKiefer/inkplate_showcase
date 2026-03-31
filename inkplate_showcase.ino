@@ -113,6 +113,7 @@ void setup_wifi() {
         print(message);
         Serial.println("Connecting to SSID: [" + String(ssids[i]) + "]");
         WiFi.begin(ssids[i], passwords[i]);
+        delay(500);
         int attempts = 0;
         while (WiFi.status() != WL_CONNECTED && attempts < 10) {
           delay(1000);
