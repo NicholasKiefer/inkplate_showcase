@@ -10,17 +10,17 @@ unsigned long readMillis = 0;
 void setup_logic() {
 }
 
-void logic() {
+int logic() {
   // check time
   if (!(millis() - readMillis > updateMs || readMillis == 0)) {
-    return;
+    return 0;
   }
 
   // check internet connection
   readMillis = millis();
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi disconnected.");
-    return;
+    return 1;
   }
   // check delta
   // update
@@ -35,11 +35,11 @@ void logic() {
   if (responsecode != 200) {
     String message = "http response code: " + String(responsecode);
     Serial.println(message);
-    return;
+    return 1;
     }
   if (encodedString == displaytext) {
     Serial.println("encoded string is already displayed.");
-    return;
+    return 2;
     }
 
 
@@ -54,7 +54,7 @@ void logic() {
   if (res.firstLine == String("web")) {
     display_git(res);
     }
-  return;
+  return 2;
 }
 
 Result parseInput(String input) {

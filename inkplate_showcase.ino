@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.13"
+#define FIRMWARE_VERSION "1.0.14"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -24,8 +24,10 @@ unsigned long startTime;
 unsigned long restartTimer;
 
 int cursorline = 0;
+int logicResponse;
 
 int wifiFailCount = 0;
+int logicFailCount = 0;
 
 
 void setup() {
@@ -42,25 +44,26 @@ void setup() {
 }
 
 void loop() {
-  
+  // do loop every second
+  sleep(1);
   // Check WiFi status and handle failures
   if (WiFi.status() != WL_CONNECTED) {
     wifiFailCount++;
     Serial.println("WiFi disconnected, fail count: " + String(wifiFailCount));
     delay(1000);
-    if (wifiFailCount >= 10) {
-      Serial.println("WiFi failed 10 times, resetting connection...");
-      WiFi.disconnect();
-      delay(1000);
-      setup_wifi();
-      wifiFailCount = 0;
-    }
   } else {
     if (wifiFailCount > 0) {
       Serial.println("WiFi reconnected, resetting fail count.");
       wifiFailCount = 0;
     }
   }
+  if (wifiFailCount >= 10) {
+      Serial.println("WiFi failed 10 times, resetting connection...");
+      WiFi.disconnect();
+      delay(1000);
+      setup_wifi();
+      wifiFailCount = 0;
+    }
   
   // Restart after 1 hour for safety reasons
   if (millis() - restartTimer > 3600000UL) {
@@ -77,7 +80,18 @@ void loop() {
     }
     startTime = millis();
   }
-  logic();  // Call the main drive logic from the separate .cpp file
+  logicResponse = logic();  // 0 not running, 1 fail, 2 success
+  if (logicResponse == 2) {
+    logicFailCount = 0;
+  }
+  else if (logicResponse == 1)
+  {
+    logicFailCount++;
+    if (logicFailCount > 20) {
+      ESP.restart();
+    }
+  }
+  
 }
 
 void setup_display() {
@@ -114,8 +128,8 @@ void setup_wifi() {
         Serial.println("Connecting to SSID: [" + String(ssids[i]) + "]");
         WiFi.begin(ssids[i], passwords[i]);
         int attempts = 0;
-        while (WiFi.status() != WL_CONNECTED && attempts < 10) {
-          delay(1000);
+        while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+          delay(2000);
           attempts++;
           Serial.println("Attempt " + String(attempts) + ", status: " + String(WiFi.status()));
         }
