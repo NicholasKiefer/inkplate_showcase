@@ -9,7 +9,7 @@ struct ContentPayload;
 void pollContent();
 bool parseJsonPayload(const String& json, ContentPayload& cp);
 bool renderPayload(const ContentPayload& cp);
-void reportStatus(const String& eventName, int version, const String& message);
+void reportStatus(const String& eventName, const String& timestamp, const String& message);
 String urlEncode(const String &str);
 
 // Constants
@@ -21,17 +21,16 @@ const unsigned long heartbeatIntervalMs = 60000;  // 1 minute heartbeat
 unsigned long lastPollMs = 0;
 unsigned long lastHeartbeatMs = 0;
 String lastRawPayload = "";
-int lastDisplayedVersion = -1;
+String lastDisplayedVersion = "";
 
 struct ContentPayload {
-  int version;
+  String timestamp;
   String mode;
   int size;
   int posX;
   int posY;
   String content;
   String imageUrl;
-  bool fullRefresh;
 };
 
 void setup_logic() {
@@ -63,7 +62,7 @@ void pollContent() {
     return;
   }
 
-  String url = content + "?action=content";
+  String url = content + "current";
   HTTPClient http;
   http.begin(url);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -92,21 +91,21 @@ void pollContent() {
     return;
   }
 
-  if (cp.version <= lastDisplayedVersion) {
-    Serial.println("No new version. Current=" + String(lastDisplayedVersion) + ", Incoming=" + String(cp.version));
+  if (cp.timestamp == lastDisplayedVersion) {
+    Serial.println("No new version. Current=" + lastDisplayedVersion + ", Incoming=" + cp.timestamp);
     return;
   }
 
-  reportStatus("new_version_found", cp.version, "updating");
+  reportStatus("new_version_found", cp.timestamp, "updating");
 
   bool ok = renderPayload(cp);
 
   if (ok) {
-    lastDisplayedVersion = cp.version;
+    lastDisplayedVersion = cp.timestamp;
     lastRawPayload = payload;
-    reportStatus("display_refresh_done", cp.version, "render success");
+    reportStatus("display_refresh_done", cp.timestamp, "render success");
   } else {
-    reportStatus("display_error", cp.version, "render failed");
+    reportStatus("display_error", cp.timestamp, "render failed");
   }
 }
 
@@ -118,16 +117,15 @@ bool parseJsonPayload(const String& json, ContentPayload& cp) {
     return false;
   }
 
-  cp.version = doc["version"] | -1;
+  cp.timestamp = doc["timestamp"] | "";
   cp.mode = doc["mode"] | "text";
-  cp.size = doc["size"] | 3;
-  cp.posX = doc["pos_x"] | 25;
-  cp.posY = doc["pos_y"] | 60;
-  cp.content = doc["content"] | "";
-  cp.imageUrl = doc["image_url"] | "";
-  cp.fullRefresh = doc["full_refresh"] | false;
+  cp.size = doc["text"]["fontSize"] | 3;
+  cp.posX = doc["text"]["pos_x"] | 25;
+  cp.posY = doc["text"]["pos_y"] | 60;
+  cp.content = doc["text"]["content"] | "";
+  cp.imageUrl = doc["image"] | "";
 
-  return cp.version >= 0;
+  return cp.timestamp != "";
 }
 
 bool renderPayload(const ContentPayload& cp) {
@@ -138,9 +136,6 @@ bool renderPayload(const ContentPayload& cp) {
     display.setTextColor(BLACK);
     display.print(cp.content);
     display.display();
-    if (!cp.fullRefresh) {
-      display.clearDisplay();  // Clear after display if not full refresh
-    }
     return true;
   } else if (cp.mode == "image") {
     display.clearDisplay();
@@ -149,9 +144,6 @@ bool renderPayload(const ContentPayload& cp) {
       return false;
     }
     display.display();
-    if (!cp.fullRefresh) {
-      display.clearDisplay();
-    }
     return true;
   } else {
     Serial.println("Unknown mode: " + cp.mode);
@@ -159,25 +151,34 @@ bool renderPayload(const ContentPayload& cp) {
   }
 }
 
-void reportStatus(const String& eventName, int version, const String& message) {
+void reportStatus(const String& eventName, const String& timestamp, const String& message) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Cannot report, WiFi disconnected.");
     return;
   }
 
-  String url = content +
-               "?action=report" +
-               "&device=" + urlEncode(deviceId) +
-               "&event=" + urlEncode(eventName) +
-               "&version=" + String(version) +
-               "&rssi=" + String(WiFi.RSSI()) +
-               "&message=" + urlEncode(message);
+  String endpoint = content;
+  if (!endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
+    endpoint = "https://" + endpoint;
+  }
+  String url = endpoint + "report";
+
+  StaticJsonDocument<256> bodyDoc;
+  bodyDoc["action"] = "report";
+  bodyDoc["event"] = eventName;
+  bodyDoc["version"] = timestamp;
+  bodyDoc["rssi"] = WiFi.RSSI();
+  bodyDoc["message"] = message;
+
+  String body;
+  serializeJson(bodyDoc, body);
 
   HTTPClient http;
   http.begin(url);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  int httpCode = http.GET();
-  Serial.println("Report [" + eventName + "] => HTTP " + String(httpCode));
+  http.addHeader("Content-Type", "application/json");
+  int httpCode = http.POST(body);
+  Serial.println("Report [" + eventName + "] => HTTP " + String(httpCode) + " body=" + body);
   http.end();
 }
 
@@ -197,8 +198,3 @@ String urlEncode(const String &str) {
   }
   return encoded;
 }
-
-// Remove old functions that are no longer needed
-// Result parseInput(String input);
-// void display_text(Result result);
-// void display_git(Result result);
