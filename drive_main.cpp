@@ -120,8 +120,8 @@ bool parseJsonPayload(const String& json, ContentPayload& cp) {
   cp.timestamp = doc["timestamp"] | "";
   cp.mode = doc["mode"] | "text";
   cp.size = doc["text"]["fontSize"] | 3;
-  cp.posX = doc["text"]["pos_x"] | 25;
-  cp.posY = doc["text"]["pos_y"] | 60;
+  cp.posX = doc["text"]["x"] | 25;
+  cp.posY = doc["text"]["y"] | 60;
   cp.content = doc["text"]["content"] | "";
   cp.imageUrl = doc["image"] | "";
 
@@ -132,8 +132,8 @@ bool renderPayload(const ContentPayload& cp) {
   if (cp.mode == "text") {
     display.clearDisplay();
     display.setTextSize(cp.size);
-    display.setCursor(cp.posX, cp.posY);
     display.setTextColor(BLACK);
+    display.setCursor((int16_t) cp.posX, (int16_t) cp.posY);
     display.print(cp.content);
     display.display();
     return true;
