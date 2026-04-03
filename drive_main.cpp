@@ -164,9 +164,8 @@ void reportStatus(const String& eventName, const String& timestamp, const String
   String url = endpoint + "report";
 
   StaticJsonDocument<256> bodyDoc;
-  bodyDoc["action"] = "report";
   bodyDoc["event"] = eventName;
-  bodyDoc["version"] = timestamp;
+  bodyDoc["timestamp"] = timestamp;
   bodyDoc["rssi"] = WiFi.RSSI();
   bodyDoc["message"] = message;
 
