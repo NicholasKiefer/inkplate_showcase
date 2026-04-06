@@ -164,6 +164,7 @@ void reportStatus(const String& message, const ContentPayload& cp) {
     bodyDoc["text"] = cp.content;
     bodyDoc["x"] = cp.posX;
     bodyDoc["y"] = cp.posY;
+    bodyDoc["fontSize"] = cp.size;
   }
   else if (cp.mode == "image") {
     bodyDoc["imageURL"] = cp.imageUrl;
