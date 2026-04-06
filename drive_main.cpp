@@ -92,6 +92,7 @@ void pollContent() {
 
   if (cp.timestamp == lastDisplayedVersion) {
     Serial.println("No new version. Current=" + lastDisplayedVersion + ", Incoming=" + cp.timestamp);
+    reportStatus("alive", cp);
     return;
   }
 
