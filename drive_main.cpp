@@ -9,8 +9,7 @@ struct ContentPayload;
 void pollContent();
 bool parseJsonPayload(const String& json, ContentPayload& cp);
 bool renderPayload(const ContentPayload& cp);
-void reportStatus(const String& eventName, const String& timestamp, const String& message);
-String urlEncode(const String &str);
+void reportStatus(const String& message, const ContentPayload& cp);
 
 // Constants
 const char* deviceId = "inkplate-showcase";
@@ -47,10 +46,10 @@ void logic() {
     pollContent();
   }
 
-  if (millis() - lastHeartbeatMs >= heartbeatIntervalMs || lastHeartbeatMs == 0) {
-    lastHeartbeatMs = millis();
-    reportStatus("heartbeat", lastDisplayedVersion, "alive");
-  }
+  // if (millis() - lastHeartbeatMs >= heartbeatIntervalMs || lastHeartbeatMs == 0) {
+  //   lastHeartbeatMs = millis();
+  //   // reportStatus("alive");
+  // }
 
   delay(50);
 }
@@ -58,7 +57,7 @@ void logic() {
 void pollContent() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("No WiFi, skipping poll.");
-    reportStatus("wifi_disconnected", lastDisplayedVersion, "poll skipped");
+    //reportStatus("wifi_disconnected", lastDisplayedVersion, "poll skipped");
     return;
   }
 
@@ -70,7 +69,7 @@ void pollContent() {
 
   if (httpCode != 200) {
     Serial.println("Content GET failed: " + String(httpCode));
-    reportStatus("content_http_error", lastDisplayedVersion, "http=" + String(httpCode));
+    // reportStatus("content_http_error", lastDisplayedVersion, "http=" + String(httpCode));
     http.end();
     return;
   }
@@ -80,14 +79,14 @@ void pollContent() {
 
   if (payload.length() == 0) {
     Serial.println("Empty payload");
-    reportStatus("content_empty", lastDisplayedVersion, "empty payload");
+    // reportStatus("content_empty", lastDisplayedVersion, "empty payload");
     return;
   }
 
   ContentPayload cp;
   if (!parseJsonPayload(payload, cp)) {
     Serial.println("Invalid JSON payload");
-    reportStatus("content_parse_error", lastDisplayedVersion, "invalid json");
+    // reportStatus("content_parse_error", lastDisplayedVersion, "invalid json");
     return;
   }
 
@@ -96,16 +95,16 @@ void pollContent() {
     return;
   }
 
-  reportStatus("new_version_found", cp.timestamp, "updating");
+  // reportStatus("new_version_found", cp.timestamp, "updating");
 
   bool ok = renderPayload(cp);
 
   if (ok) {
     lastDisplayedVersion = cp.timestamp;
     lastRawPayload = payload;
-    reportStatus("display_refresh_done", cp.timestamp, "render success");
+    reportStatus("render success", cp);
   } else {
-    reportStatus("display_error", cp.timestamp, "render failed");
+    reportStatus("render failed", cp);
   }
 }
 
@@ -151,21 +150,24 @@ bool renderPayload(const ContentPayload& cp) {
   }
 }
 
-void reportStatus(const String& eventName, const String& timestamp, const String& message) {
+void reportStatus(const String& message, const ContentPayload& cp) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Cannot report, WiFi disconnected.");
     return;
   }
 
   String endpoint = content;
-  if (!endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
-    endpoint = "https://" + endpoint;
-  }
-  String url = endpoint + "report";
+  String url = content + "health";
 
   StaticJsonDocument<256> bodyDoc;
-  bodyDoc["event"] = eventName;
-  bodyDoc["timestamp"] = timestamp;
+  if (cp.mode == "text") {
+    bodyDoc["text"] = cp.content;
+    bodyDoc["x"] = cp.posX;
+    bodyDoc["y"] = cp.posY;
+  }
+  else if (cp.mode == "image") {
+    bodyDoc["imageURL"] = cp.imageUrl;
+  }
   bodyDoc["rssi"] = WiFi.RSSI();
   bodyDoc["message"] = message;
 
@@ -177,23 +179,6 @@ void reportStatus(const String& eventName, const String& timestamp, const String
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST(body);
-  Serial.println("Report [" + eventName + "] => HTTP " + String(httpCode) + " body=" + body);
+  Serial.println("Report => HTTP " + String(httpCode) + " body=" + body);
   http.end();
-}
-
-String urlEncode(const String &str) {
-  String encoded = "";
-  char c;
-  char bufHex[4];
-
-  for (int i = 0; i < str.length(); i++) {
-    c = str.charAt(i);
-    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-      encoded += c;
-    } else {
-      sprintf(bufHex, "%%%02X", c);
-      encoded += bufHex;
-    }
-  }
-  return encoded;
 }
