@@ -1,0 +1,6 @@
+wifistuff.cpp
+*.elf
+*.map
+*.partitions.bin
+*bootloader.bin
+todo.md
