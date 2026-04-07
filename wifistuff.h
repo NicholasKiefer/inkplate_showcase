@@ -9,6 +9,5 @@ extern int numNetworks;
 
 extern String manifest;
 extern String content;
-extern String webapp;
 
 #endif

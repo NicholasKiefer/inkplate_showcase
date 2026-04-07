@@ -13,7 +13,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.18"
+#define FIRMWARE_VERSION "1.0.19"
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
