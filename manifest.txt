@@ -1,2 +1,2 @@
-1.0.20
+1.0.21
 https://raw.githubusercontent.com/NicholasKiefer/inkplate_showcase/refs/heads/dev/build/Inkplate_Boards.esp32.Inkplate6V2/inkplate_showcase.ino.bin

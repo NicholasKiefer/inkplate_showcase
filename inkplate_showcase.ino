@@ -14,8 +14,8 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.20"
-const int HTTP_TIMEOUT_S = 10;
+#define FIRMWARE_VERSION "1.0.21"
+const int HTTP_TIMEOUT_S = 30;
 const int TASK_WDT_TIMEOUT_S = 30;
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
@@ -171,7 +171,7 @@ void check_for_update() {
     http.end();
     return;
   }
-  http.setTimeout(HTTP_TIMEOUT_S);
+  http.setTimeout(HTTP_TIMEOUT_S * 1000);
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {

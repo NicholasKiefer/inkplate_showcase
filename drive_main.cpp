@@ -64,9 +64,23 @@ void pollContent() {
 
   String url = content + "current";
   HTTPClient http;
-  http.begin(url);
-  http.setTimeout(HTTP_TIMEOUT_S);
+  WiFiClientSecure client;
+  client.setTimeout(HTTP_TIMEOUT_S);
+  #ifdef UPDATE_ROOT_CA
+  // Use provided root CA for verification if available
+  client.setCACert(UPDATE_ROOT_CA);
+  #else
+    // No CA provided — allow insecure connections (skip cert verification)
+    client.setInsecure();
+  #endif
+
+  http.setTimeout(HTTP_TIMEOUT_S * 1000);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  if (!http.begin(client, url)) {
+    Serial.println("HTTP begin failed");
+    http.end();
+    return;
+  }
   int httpCode = http.GET();
 
   if (httpCode != 200) {
@@ -180,7 +194,7 @@ void reportStatus(const String& message, const ContentPayload& cp) {
 
   HTTPClient http;
   http.begin(url);
-  http.setTimeout(HTTP_TIMEOUT_S);
+  http.setTimeout(HTTP_TIMEOUT_S * 1000);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST(body);
