@@ -15,6 +15,7 @@ void reportStatus(const String& message, const ContentPayload& cp);
 const char* deviceId = "inkplate-showcase";
 const unsigned long updateIntervalMs = 10000;     // 10 seconds for testing, can change to 300000 later
 const unsigned long heartbeatIntervalMs = 60000;  // 1 minute heartbeat
+const int HTTP_TIMEOUT_S = 10;
 
 // Global variables
 unsigned long lastPollMs = 0;
@@ -64,6 +65,7 @@ void pollContent() {
   String url = content + "current";
   HTTPClient http;
   http.begin(url);
+  http.setTimeout(HTTP_TIMEOUT_S);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   int httpCode = http.GET();
 
@@ -178,6 +180,7 @@ void reportStatus(const String& message, const ContentPayload& cp) {
 
   HTTPClient http;
   http.begin(url);
+  http.setTimeout(HTTP_TIMEOUT_S);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST(body);

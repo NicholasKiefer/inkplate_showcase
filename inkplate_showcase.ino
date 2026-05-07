@@ -9,11 +9,14 @@
 
 #include <HTTPUpdate.h>  // ESP32 HTTP Update helper (for OTA updates)
 #include <WiFiClientSecure.h>
+#include <esp_task_wdt.h>
 
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.19"
+#define FIRMWARE_VERSION "1.0.20"
+const int HTTP_TIMEOUT_S = 10;
+const int TASK_WDT_TIMEOUT_S = 30;
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
@@ -31,6 +34,8 @@ int wifiFailCount = 0;
 void setup() {
   delay(1000);
   Serial.begin(115200);
+  esp_task_wdt_init(TASK_WDT_TIMEOUT_S, true);
+  esp_task_wdt_add(NULL);
 
   setup_display();
   setup_wifi();
@@ -42,7 +47,8 @@ void setup() {
 }
 
 void loop() {
-  
+  esp_task_wdt_reset();
+
   // Check WiFi status and handle failures
   if (WiFi.status() != WL_CONNECTED) {
     wifiFailCount++;
@@ -150,6 +156,7 @@ void check_for_update() {
   Serial.println("Checking for updates...");
 
   WiFiClientSecure client;
+  client.setTimeout(HTTP_TIMEOUT_S);
 #ifdef UPDATE_ROOT_CA
   // Use provided root CA for verification if available
   client.setCACert(UPDATE_ROOT_CA);
@@ -164,6 +171,7 @@ void check_for_update() {
     http.end();
     return;
   }
+  http.setTimeout(HTTP_TIMEOUT_S);
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
@@ -221,6 +229,7 @@ void perform_ota_update(const String &binUrl) {
   delay(200);
 
   WiFiClientSecure client;
+  client.setTimeout(HTTP_TIMEOUT_S);
 #ifdef UPDATE_ROOT_CA
   client.setCACert(UPDATE_ROOT_CA);
 #else
