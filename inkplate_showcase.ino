@@ -14,15 +14,16 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.21"
-const int HTTP_TIMEOUT_S = 30;
-const int TASK_WDT_TIMEOUT_S = 30;
+#define FIRMWARE_VERSION "1.0.22"
+const int HTTP_TIMEOUT_S = 10;
+const int TASK_WDT_TIMEOUT_S = 60;
 
 //#define WAKE_BUTTON_PIN 39 // double-check actual pin from schematic or documentation
 
 //Inkplate display(INKPLATE_1BIT);  // Create an object on Inkplate library and also set library into 1 Bit mode (BW)
 Inkplate display(INKPLATE_3BIT);
 bool staticip = false;
+String manifestEtag;
 unsigned long startTime;
 unsigned long restartTimer;
 
@@ -75,7 +76,7 @@ void loop() {
   }
   
   // After running for x, check for OTA update
-  if (millis() - startTime > 60000) {
+  if (millis() - startTime > 900000UL) {
     if (WiFi.status() == WL_CONNECTED) {
       check_for_update();
     } else {
@@ -83,6 +84,7 @@ void loop() {
     }
     startTime = millis();
   }
+  esp_task_wdt_reset();
   logic();  // Call the main drive logic from the separate .cpp file
 }
 
@@ -94,7 +96,7 @@ void setup_display() {
 
   display.clearDisplay();           // Clear everything in frame buffer
   display.setCursor(0, 0);          // Set print cursor to new position
-  display.display();
+  // E-paper retains the last successful frame across reboot.
 }
 
 void setup_wifi() {
@@ -115,13 +117,13 @@ void setup_wifi() {
     // Check if this SSID is available
     for (int j = 0; j < n; j++) {
       if (WiFi.SSID(j) == ssids[i]) {
-        String message = "Connecting to " + String(ssids[i]) + "...";
-        print(message);
+        // Keep the last successful frame visible during reconnection.
         Serial.println("Connecting to SSID: [" + String(ssids[i]) + "]");
         WiFi.begin(ssids[i], passwords[i]);
         delay(500);
         int attempts = 0;
         while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+          esp_task_wdt_reset();
           delay(1000);
           attempts++;
           Serial.println("Attempt " + String(attempts) + ", status: " + String(WiFi.status()));
@@ -141,22 +143,18 @@ void setup_wifi() {
     Serial.println("Failed to connect to any known network.");
   }
   
-  display.clearDisplay();
-  display.display();
-  display.setCursor(0, 0);
-  cursorline = 0;
+  WiFi.scanDelete();
+  esp_task_wdt_reset();
 }
 
 
-// Check for OTA update. Expects that `manifest` (from wifistuff.h) points to a small
-// manifest where the first line is the version string and the second line is the
-// direct URL to the .bin file. If the manifest only contains a single line, it
-// will be interpreted as the bin URL and the update will be attempted.
+// Check a versioned two-line manifest every 15 minutes, using ETag when available.
 void check_for_update() {
   Serial.println("Checking for updates...");
 
   WiFiClientSecure client;
   client.setTimeout(HTTP_TIMEOUT_S);
+  client.setHandshakeTimeout(HTTP_TIMEOUT_S);
 #ifdef UPDATE_ROOT_CA
   // Use provided root CA for verification if available
   client.setCACert(UPDATE_ROOT_CA);
@@ -172,14 +170,22 @@ void check_for_update() {
     return;
   }
   http.setTimeout(HTTP_TIMEOUT_S * 1000);
+  http.setConnectTimeout(HTTP_TIMEOUT_S * 1000);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
+  const char* responseHeaders[] = {"ETag"};
+  http.collectHeaders(responseHeaders, 1);
+  if (manifestEtag.length()) http.addHeader("If-None-Match", manifestEtag);
   int code = http.GET();
+  if (code == HTTP_CODE_NOT_MODIFIED) { http.end(); return; }
+  String responseEtag = http.header("ETag");
   if (code != HTTP_CODE_OK) {
     Serial.printf("Update check HTTP error: %d\n", code);
     http.end();
     return;
   }
 
+  if (http.getSize() > 2048) { http.end(); return; }
   String payload = http.getString();
   http.end();
   payload.trim();
@@ -204,19 +210,26 @@ void check_for_update() {
   Serial.println("Remote version: " + remoteVersion);
   Serial.println("Bin URL: " + binUrl);
 
-  if (remoteVersion.length() > 0) {
-    if (remoteVersion == String(FIRMWARE_VERSION)) {
-      Serial.println("Firmware up to date.");
-      return;
-    } else {
-      Serial.println("New firmware available: " + remoteVersion + " (local " + String(FIRMWARE_VERSION) + ")");
-    }
-  } else {
-    Serial.println("No version in manifest; will attempt update from provided URL.");
+  // Only accept a strictly newer three-part version; stale CDN manifests must
+  // never downgrade a device or cause versionless reinstall loops.
+  unsigned int remote[3], local[3];
+  char extra;
+  if (sscanf(remoteVersion.c_str(), "%u.%u.%u%c", &remote[0], &remote[1], &remote[2], &extra) != 3 ||
+      sscanf(FIRMWARE_VERSION, "%u.%u.%u", &local[0], &local[1], &local[2]) != 3) {
+    Serial.println("Invalid or missing firmware version.");
+    return;
   }
-
-  if (binUrl.length() == 0) {
-    Serial.println("No bin URL provided in manifest.");
+  bool newer = false;
+  for (int i = 0; i < 3; ++i) {
+    if (remote[i] != local[i]) {
+      newer = remote[i] > local[i];
+      break;
+    }
+  }
+  if (!newer) manifestEtag = responseEtag;
+  else manifestEtag = "";  // Retry newer firmware after a failed OTA transfer.
+  if (!newer || !binUrl.startsWith("https://") || binUrl.indexOf('\n') >= 0) {
+    Serial.println("No valid newer firmware available.");
     return;
   }
 
@@ -230,17 +243,22 @@ void perform_ota_update(const String &binUrl) {
 
   WiFiClientSecure client;
   client.setTimeout(HTTP_TIMEOUT_S);
+  client.setHandshakeTimeout(HTTP_TIMEOUT_S);
 #ifdef UPDATE_ROOT_CA
   client.setCACert(UPDATE_ROOT_CA);
 #else
   client.setInsecure();
 #endif
 
-  t_httpUpdate_return ret = httpUpdate.update(client, binUrl.c_str());
+  esp_task_wdt_reset();
+  HTTPUpdate updater(HTTP_TIMEOUT_S * 1000);
+  updater.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  updater.onProgress([](int current, int total) { esp_task_wdt_reset(); });
+  t_httpUpdate_return ret = updater.update(client, binUrl.c_str());
 
   switch (ret) {
     case HTTP_UPDATE_FAILED:
-      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", updater.getLastError(), updater.getLastErrorString().c_str());
       break;
     case HTTP_UPDATE_NO_UPDATES:
       Serial.println("HTTP_UPDATE_NO_UPDATES");
