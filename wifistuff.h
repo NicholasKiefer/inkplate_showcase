@@ -7,7 +7,5 @@ extern const char* ssids[];
 extern const char* passwords[];
 extern int numNetworks;
 
-extern String manifest;
-extern String content;
 
 #endif
