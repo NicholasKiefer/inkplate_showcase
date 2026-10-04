@@ -29,9 +29,6 @@ Compilation failure stops before updating the binary or manifest. Set
 Publication makes the release available to existing devices through OTA;
 it does not verify that a device installed it.
 
-`wifistuff.cpp` stays ignored. As in previous releases, the compiled binary contains
-Wi-Fi credentials and is published to the existing feed.
-
 ## Recovery changes in 1.0.22
 
 - Startup/reconnection no longer erase the physical e-paper frame. Content is
