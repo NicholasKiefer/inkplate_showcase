@@ -11,6 +11,7 @@
 #include <WiFiClientSecure.h>
 #include <esp_task_wdt.h>
 
+#include "firmware_config.h"
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
@@ -164,7 +165,7 @@ void check_for_update() {
 #endif
 
   HTTPClient http;
-  if (!http.begin(client, manifest)) {
+  if (!http.begin(client, FIRMWARE_MANIFEST_URL)) {
     Serial.println("HTTP begin failed for update check");
     http.end();
     return;

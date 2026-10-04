@@ -1,3 +1,4 @@
+#include "firmware_config.h"
 #include "drive_main.h"
 #include <HTTPClient.h>
 #include "wifistuff.h"  //Include private information like WiFi SSID and password
@@ -59,7 +60,7 @@ void pollContent() {
     return;
   }
 
-  String url = content + "current";
+  String url = String(FIRMWARE_CONTENT_URL) + "current";
   HTTPClient http;
   WiFiClientSecure client;
   client.setTimeout(HTTP_TIMEOUT_S);
@@ -283,7 +284,7 @@ void reportStatus(const String& message, const ContentPayload& cp) {
       millis() - lastHeartbeatMs < heartbeatIntervalMs) return;
   lastHeartbeatMs = millis();
   esp_task_wdt_reset();
-  String url = content + "health";
+  String url = String(FIRMWARE_CONTENT_URL) + "health";
 
   StaticJsonDocument<256> bodyDoc;
   if (cp.mode == "text") {

@@ -1,3 +1,17 @@
+# Development board testing
+
+This branch uses the preview API at `https://board-preview.linaku94.workers.dev/api/display/`
+and the separate `dev/manifest-dev.txt` OTA feed, configured in `firmware_config.h`.
+Flash `build/Inkplate_Boards.esp32.Inkplate6V2/inkplate_showcase.ino.bin` onto the test
+board once (or upload the sketch with Arduino IDE). Subsequent dev releases use OTA.
+The firmware checks for OTA every 15 minutes.
+
+Legacy production firmware also polls `dev/manifest.txt`, so that file stays at
+the published production version and URL. Do not point it at the development binary.
+The release script is restricted to `dev` and updates only `manifest-dev.txt`.
+Before promoting to master, change both URLs in `firmware_config.h` to the production
+API and master OTA feed, restore the production release workflow, and rebuild.
+
 # Inkplate showcase firmware
 
 Release in one command using Arduino IDE's bundled Arduino CLI and the installed
@@ -9,7 +23,7 @@ Inkplate board package:
 
 This bumps the sketch version, compiles with `PartitionScheme=default` (two OTA
 slots), checks the partition table, and commits source, fresh application binary,
-and matching manifest together before pushing the existing GitHub OTA feed.
+and matching development manifest together before pushing the dev GitHub OTA feed.
 Compilation failure stops before updating the binary or manifest. Set
 `ARDUINO_CLI` and `ARDUINO_CLI_CONFIG` if your IDE is installed elsewhere.
 Publication makes the release available to existing devices through OTA;
