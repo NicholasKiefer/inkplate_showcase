@@ -15,7 +15,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.22"
+#define FIRMWARE_VERSION "1.0.23"
 const int HTTP_TIMEOUT_S = 10;
 const int TASK_WDT_TIMEOUT_S = 60;
 
