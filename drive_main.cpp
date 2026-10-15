@@ -16,7 +16,7 @@ bool downloadAndDrawImage(const String& url);
 void reportStatus(const String& message, const ContentPayload& cp);
 
 // Constants
-const char* deviceId = "inkplate-showcase";
+const char* deviceId = FIRMWARE_DEVICE_ID;
 const unsigned long updateIntervalMs = 10000;     // Keep content updates responsive
 const unsigned long heartbeatIntervalMs = 60000;  // 1 minute heartbeat
 const int HTTP_TIMEOUT_S = 10;
@@ -107,6 +107,7 @@ void pollContent() {
     return;
   }
 
+  Serial.println("Content mode=" + cp.mode + ", size=" + String(cp.size));
   if (cp.timestamp == lastDisplayedVersion) {
     Serial.println("No new version. Current=" + lastDisplayedVersion + ", Incoming=" + cp.timestamp);
     reportStatus("alive", cp);
@@ -128,7 +129,7 @@ void pollContent() {
 }
 
 bool parseJsonPayload(const String& json, ContentPayload& cp) {
-  StaticJsonDocument<1024> doc;
+  DynamicJsonDocument doc(12288);
   DeserializationError err = deserializeJson(doc, json);
   if (err) {
     Serial.println("JSON error: " + String(err.c_str()));
@@ -136,16 +137,24 @@ bool parseJsonPayload(const String& json, ContentPayload& cp) {
   }
 
   cp.timestamp = doc["timestamp"] | "";
-  cp.mode = doc["mode"] | "text";
+  cp.mode = doc["mode"] | (doc["image"].isNull() ? "text" : "image");
   cp.size = doc["text"]["fontSize"] | 3;
   cp.posX = doc["text"]["x"] | 25;
   cp.posY = doc["text"]["y"] | 60;
   cp.content = doc["text"]["content"] | "";
-  cp.imageUrl = doc["image"] | "";
+  cp.imageUrl = doc["image"].is<JsonObject>()
+      ? (doc["image"]["url"] | "") : (doc["image"] | "");
+  if (cp.imageUrl.startsWith("/")) {
+    String origin = FIRMWARE_CONTENT_URL;
+    origin = origin.substring(0, origin.indexOf('/', 8));
+    cp.imageUrl = origin + cp.imageUrl;
+  }
+  // Image activation can change without changing the text's timestamp.
+  if (cp.mode == "image") cp.timestamp = "image:" + cp.imageUrl;
 
   if (cp.timestamp.length() == 0) return false;
   if (cp.mode == "text") {
-    return cp.content.length() > 0 && cp.size >= 1 && cp.size <= 10 &&
+    return cp.content.length() > 0 && cp.size >= 1 && cp.size <= 72 &&
            cp.posX >= 0 && cp.posX < display.width() &&
            cp.posY >= 0 && cp.posY < display.height();
   }
@@ -286,7 +295,7 @@ void reportStatus(const String& message, const ContentPayload& cp) {
   esp_task_wdt_reset();
   String url = String(FIRMWARE_CONTENT_URL) + "health";
 
-  StaticJsonDocument<256> bodyDoc;
+  DynamicJsonDocument bodyDoc(12288);
   if (cp.mode == "text") {
     bodyDoc["text"] = cp.content;
     bodyDoc["x"] = cp.posX;
@@ -296,6 +305,9 @@ void reportStatus(const String& message, const ContentPayload& cp) {
   else if (cp.mode == "image") {
     bodyDoc["imageURL"] = cp.imageUrl;
   }
+  bodyDoc["deviceId"] = deviceId;
+  bodyDoc["status"] = message;
+  bodyDoc["lastContent"] = cp.timestamp;
   bodyDoc["rssi"] = WiFi.RSSI();
   bodyDoc["message"] = message;
 

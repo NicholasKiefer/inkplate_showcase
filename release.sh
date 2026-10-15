@@ -9,7 +9,9 @@ if [[ ${1:-} == --publish ]]; then publish=true; shift; fi
 (($# == 0)) || { echo "Unknown argument" >&2; exit 2; }
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 2
 branch=$(git branch --show-current)
-[[ $branch == master ]] || { echo "This configuration releases only to master." >&2; exit 2; }
+[[ $branch == dev ]] || { echo "Development releases require dev." >&2; exit 2; }
+grep -q 'board-preview.linaku94.workers.dev' firmware_config.h
+grep -q 'heads/dev/manifest-dev.txt' firmware_config.h
 cli=${ARDUINO_CLI:-$(command -v arduino-cli || true)}
 if [[ -z $cli ]]; then
   cli=/var/lib/flatpak/app/cc.arduino.IDE2/current/active/files/arduino-ide/resources/app/lib/backend/resources/arduino-cli
@@ -41,12 +43,12 @@ mkdir -p "$out"
 cp "$build"/inkplate_showcase.ino*.bin "$out/"
 python3 - "$version" <<'PY'
 import pathlib, sys
-p = pathlib.Path('manifest.txt')
+p = pathlib.Path('manifest-dev.txt')
 url = p.read_text().splitlines()[1]
 assert url.startswith('https://')
 p.write_text(sys.argv[1] + '\n' + url + '\n')
 PY
 git diff --check
-git add inkplate_showcase.ino drive_main.cpp drive_main.h wifistuff.h .gitignore release.sh firmware_config.h manifest.txt "$out/inkplate_showcase.ino.bin"
-git commit -m "Release $version: production firmware"
-if $publish; then git push origin HEAD:master; fi
+git add inkplate_showcase.ino drive_main.cpp drive_main.h wifistuff.h .gitignore release.sh firmware_config.h manifest-dev.txt "$out/inkplate_showcase.ino.bin"
+git commit -m "Release $version: development firmware"
+if $publish; then git push origin HEAD:dev; fi

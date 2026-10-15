@@ -15,7 +15,7 @@
 #include "drive_main.h"  // Include the main drive logic
 
 // Current firmware version. Bump this when releasing a new firmware
-#define FIRMWARE_VERSION "1.0.23"
+#define FIRMWARE_VERSION "1.0.24"
 const int HTTP_TIMEOUT_S = 10;
 const int TASK_WDT_TIMEOUT_S = 60;
 
@@ -39,6 +39,9 @@ void setup() {
   esp_task_wdt_init(TASK_WDT_TIMEOUT_S, true);
   esp_task_wdt_add(NULL);
 
+  Serial.println("Firmware " FIRMWARE_VERSION " (" FIRMWARE_ENVIRONMENT ")");
+  Serial.println("Content: " FIRMWARE_CONTENT_URL);
+  Serial.println("OTA: " FIRMWARE_MANIFEST_URL);
   setup_display();
   setup_wifi();
   delay(1000);
