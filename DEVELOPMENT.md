@@ -28,3 +28,9 @@ production unchanged.
 The production `manifest.txt` retained on dev is a legacy feed for old installed
 firmware. Leave it byte-for-byte identical to master. New development firmware
 reads only `manifest-dev.txt`, whose binary URL must also target `dev`.
+
+For an explicitly authorized local test against production content, compile with
+`--build-property compiler.cpp.extra_flags=-DINKPLATE_PRODUCTION_CONTENT_TEST`
+and a separate build directory. This profile reads production content but skips
+health POSTs and retains the development OTA feed. Never publish that binary as
+the normal development release. Reflash the ordinary build to return to preview.

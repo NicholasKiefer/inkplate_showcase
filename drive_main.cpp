@@ -284,6 +284,10 @@ bool downloadAndDrawImage(const String& url) {
 }
 
 void reportStatus(const String& message, const ContentPayload& cp) {
+#ifdef INKPLATE_PRODUCTION_CONTENT_TEST
+  Serial.println("Read-only production test: " + message);
+  return;
+#endif
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Cannot report, WiFi disconnected.");
     return;
